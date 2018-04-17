@@ -46,7 +46,7 @@ class LoggingMiddleware(object):
 
         response = self.get_response(request)
 
-        if request.path not in self.request_logging_blacklist:
+        if request.path not in self.request_url_blacklist:
             # Responses only logged for paths not specified in self.request_url_blacklist
             message = 'Response: {} => {} {}'.format(
                 request.request_str, response.status_code, response.reason_phrase)
