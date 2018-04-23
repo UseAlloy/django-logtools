@@ -33,13 +33,12 @@ class LoggingMiddleware(object):
         self.get_response = get_response
 
     def __call__(self, request):
-        request.log_data = self.get_log_data(request)
         if request.path not in self.request_url_blacklist:
             request.request_str = '{} {}'.format(request.method, request.path)
             # Requests only logged to path not specified in self.request_url_blacklist
             message = 'Request: ' + request.request_str
 
-            log_data = request.log_data.copy()
+            log_data = self.get_log_data(request)
             log_data['request'] = self.get_request_data(request)
 
             self.request_logger.info(message, extra=log_data)
@@ -51,7 +50,7 @@ class LoggingMiddleware(object):
             message = 'Response: {} => {} {}'.format(
                 request.request_str, response.status_code, response.reason_phrase)
 
-            log_data = request.log_data.copy()
+            log_data = self.get_log_data(request)
             log_data['response'] = self.get_response_data(response)
 
             self.response_logger.info(message, extra=log_data)
@@ -62,10 +61,11 @@ class LoggingMiddleware(object):
         request.exception = exception
 
         exc_str = (': ' + str(exception)) if str(exception) else ''
+        log_data = self.get_log_data(request)
         if isinstance(exception, PermissionDenied):
             self.exception_logger.warn(
                 'Permission Denied{}'.format(exc_str),
-                extra=request.log_data,
+                extra=log_data,
                 exc_info=exception)
 
         elif isinstance(exception, Http404):
@@ -73,22 +73,19 @@ class LoggingMiddleware(object):
                 exc_str = ': ' + exception.args[0]['path']
             self.exception_logger.warn(
                 'Not Found{}'.format(exc_str),
-                extra=request.log_data,
+                extra=log_data,
                 exc_info=exception)
 
         else:
             self.exception_logger.error(
                 'Exception' + exc_str,
-                extra=request.log_data,
+                extra=log_data,
                 exc_info=exception)
 
         raise exception
 
     def get_log_data(self, request):
-        return {
-            'session_key': request.session.session_key,
-            'user': str(request.user),
-        }
+        return {}
 
     def get_request_data(self, request):
         request_data = {
