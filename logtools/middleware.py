@@ -104,7 +104,7 @@ class LoggingMiddleware(object):
                 and request.content_type == 'application/json':
             body = json.loads(
                 (request.body if type(request.body) != bytes else request.body.decode('utf-8'))
-                if request.body else {})
+            ) if request.body else {}
 
         request_data['params'] = str({
             key.lower(): (value if 'password' not in key else '*********')
