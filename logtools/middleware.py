@@ -1,9 +1,10 @@
-import json
 import logging
 import uuid
 
 from django.core.exceptions import PermissionDenied
 from django.http import Http404
+
+from .utils import get_request_log_data, get_response_log_data
 
 
 class LoggingMiddleware(object):
@@ -35,15 +36,16 @@ class LoggingMiddleware(object):
 
     def __call__(self, request):
         request_log_data = {}
+        if not hasattr(request, 'logtools_token'):
+            request.logtools_token = str(uuid.uuid4())
 
         if request.path not in self.request_url_blacklist:
-            request.token = str(uuid.uuid4())
             request.request_str = '{} {}'.format(request.method, request.path)
             # Requests only logged to path not specified in self.request_url_blacklist
             message = 'Request: ' + request.request_str
 
             log_data = self.get_log_data(request)
-            log_data['request'] = request_log_data = self.get_request_data(request)
+            log_data['request'] = request_log_data = get_request_log_data(request)
 
             self.request_logger.info(message, extra=log_data)
 
@@ -56,7 +58,7 @@ class LoggingMiddleware(object):
 
             log_data = self.get_log_data(request)
             log_data['request'] = request_log_data
-            log_data['response'] = self.get_response_data(response)
+            log_data['response'] = get_response_log_data(response)
 
             self.response_logger.info(message, extra=log_data)
 
@@ -67,6 +69,7 @@ class LoggingMiddleware(object):
 
         exc_str = (': ' + str(exception)) if str(exception) else ''
         log_data = self.get_log_data(request)
+        log_data['request'] = get_request_log_data(request)
         if isinstance(exception, PermissionDenied):
             self.exception_logger.warn(
                 'Permission Denied{}'.format(exc_str),
@@ -91,40 +94,3 @@ class LoggingMiddleware(object):
 
     def get_log_data(self, request):
         return {}
-
-    def get_request_data(self, request):
-        request_data = {
-            key.lower(): value for key, value in request.META.items()
-            if key in self.request_meta_fields
-        }
-
-        body = None
-        try:
-            body = getattr(request, request.method).dict()
-
-        except AttributeError:
-            pass
-
-        if body is None and request.method != 'GET' \
-                and request.content_type == 'application/json':
-            body = json.loads(
-                (request.body if type(request.body) != bytes else request.body.decode('utf-8'))
-            ) if request.body else {}
-
-        request_data['params'] = str({
-            key.lower(): (value if 'password' not in key else '*********')
-            for key, value in body.items()
-        }) if body is not None else None
-
-        request_data['token'] = request.token
-
-        return request_data
-
-    def get_response_data(self, response):
-        return {
-            'url': getattr(response, 'url', None),
-            'status_code': response.status_code,
-            'template_name': getattr(response, 'template_name', None),
-            'context_data': str(getattr(response, 'context_data', {})),
-            'headers': str(response._headers),
-        }
