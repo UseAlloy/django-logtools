@@ -1,5 +1,6 @@
 import json
 import logging
+import uuid
 
 from django.core.exceptions import PermissionDenied
 from django.http import Http404
@@ -33,13 +34,16 @@ class LoggingMiddleware(object):
         self.get_response = get_response
 
     def __call__(self, request):
+        request_log_data = {}
+
         if request.path not in self.request_url_blacklist:
+            request.token = str(uuid.uuid4())
             request.request_str = '{} {}'.format(request.method, request.path)
             # Requests only logged to path not specified in self.request_url_blacklist
             message = 'Request: ' + request.request_str
 
             log_data = self.get_log_data(request)
-            log_data['request'] = self.get_request_data(request)
+            log_data['request'] = request_log_data = self.get_request_data(request)
 
             self.request_logger.info(message, extra=log_data)
 
@@ -51,6 +55,7 @@ class LoggingMiddleware(object):
                 request.request_str, response.status_code, response.reason_phrase)
 
             log_data = self.get_log_data(request)
+            log_data['request'] = request_log_data
             log_data['response'] = self.get_response_data(response)
 
             self.response_logger.info(message, extra=log_data)
@@ -110,6 +115,8 @@ class LoggingMiddleware(object):
             key.lower(): (value if 'password' not in key else '*********')
             for key, value in body.items()
         }) if body is not None else None
+
+        request_data['token'] = request.token
 
         return request_data
 
