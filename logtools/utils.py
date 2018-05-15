@@ -4,6 +4,7 @@ import json
 REQUEST_META_FIELDS = [
     'REQUEST_METHOD',
     'PATH_INFO',
+    'REMOTE_ADDR',
     'SERVER_NAME',
     'SERVER_PROTOCOL',
     'SERVER_PORT',
