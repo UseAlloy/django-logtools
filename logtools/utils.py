@@ -41,10 +41,11 @@ def get_request_log_data(request):
             (request.body if type(request.body) != bytes else request.body.decode('utf-8'))
         ) if request.body else {}
 
-    request_data['params'] = str({
+    params = str({
         key.lower(): (value if 'password' not in key else '*********')
         for key, value in body.items()
     }) if body is not None else None
+    request_data['params'] = (params[:1000] + '...') if params else None
 
     request_data['token'] = request.logtools_token
 
