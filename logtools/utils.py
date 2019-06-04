@@ -22,31 +22,30 @@ REQUEST_META_FIELDS = [
 ]
 
 
-def get_request_log_data(request):
+def get_request_log_data(request, log_body=False):
     request_data = {
         key.lower(): value for key, value in request.META.items()
         if key in REQUEST_META_FIELDS
     }
 
-    body = None
+    params = None
     try:
-        body = getattr(request, request.method).dict()
+        params = getattr(request, request.method).dict()
 
     except AttributeError:
         pass
 
-    if body is None and request.method != 'GET' \
-            and request.content_type == 'application/json':
-        body = json.loads(
-            (request.body if type(request.body) != bytes else request.body.decode('utf-8'))
-        ) if request.body else {}
+    body = request.body if type(request.body) != bytes else request.body.decode('utf-8')
+    if not params and request.method != 'GET' and request.content_type == 'application/json':
+        params = json.loads(body) if request.body else {}
 
-    params = str({
-        key.lower(): (value if 'password' not in key else '*********')
-        for key, value in body.items()
-    }) if body is not None else None
-    request_data['params'] = (params[:1000] + '...') if params else None
+    if log_body:
+        request_data['body'] = body
 
+    request_data['params'] = {
+        key.lower(): (str(value) if 'password' not in key else '*********')
+        for key, value in params.items()
+    } if params is not None else None
     request_data['token'] = request.logtools_token
 
     return request_data
