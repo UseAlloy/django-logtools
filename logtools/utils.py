@@ -29,15 +29,15 @@ def get_request_log_data(request):
     }
 
     params = getattr(request, request.method, None).dict()
-    request_data['params'] = {
+    request_data['params'] = str({
         key.lower(): (str(value) if 'password' not in key else '*********')
         for key, value in params.items()
-    } if params is not None else None
+    }) if params is not None else None
 
     body = request.body if type(request.body) != bytes else request.body.decode('utf-8')
     if body and request.content_type == 'application/json':
         body = json.loads(body)
-    request_data['body'] = body
+    request_data['body'] = str(body)
 
     if request.method != 'GET':
         request_data['get_params'] = dict(request.GET)
