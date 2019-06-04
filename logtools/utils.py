@@ -39,6 +39,9 @@ def get_request_log_data(request):
         body = json.loads(body)
     request_data['body'] = body
 
+    if request.method != 'GET':
+        request_data['get_params'] = dict(request.GET)
+
     request_data['token'] = request.logtools_token
 
     return request_data
