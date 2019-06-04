@@ -28,7 +28,9 @@ def get_request_log_data(request):
         if key in REQUEST_META_FIELDS
     }
 
-    params = getattr(request, request.method, None).dict()
+    params = getattr(request, request.method, None)
+    if type(params) is not dict:
+        params = params.dict()
     request_data['params'] = str({
         key.lower(): (str(value) if 'password' not in key else '*********')
         for key, value in params.items()
