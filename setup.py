@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='django-logtools',
-    version='0.0.5',
+    version='0.0.6',
     description='Tools to help with logging in Django.',
     url='https://github.com/usealloy/django-logtools',
     author='Scott Clark',
