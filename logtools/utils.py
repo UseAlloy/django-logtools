@@ -29,7 +29,7 @@ def get_request_log_data(request):
     }
 
     params = getattr(request, request.method, None)
-    if type(params) is not dict:
+    if params is not None and type(params) is not dict:
         params = params.dict()
     request_data['params'] = str({
         key.lower(): (str(value) if 'password' not in key else '*********')
@@ -50,10 +50,13 @@ def get_request_log_data(request):
 
 
 def get_response_log_data(response):
-    return {
+    log_data = {
         'url': getattr(response, 'url', None),
         'status_code': response.status_code,
         'template_name': getattr(response, 'template_name', None),
         'context_data': str(getattr(response, 'context_data', {})),
         'headers': str(response._headers),
     }
+    if 'text/html' not in response['Content-Type']:
+        log_data['content'] = response.content
+    return log_data
