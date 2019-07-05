@@ -36,10 +36,20 @@ def get_request_log_data(request):
         for key, value in params.items()
     }) if params is not None else None
 
-    body = request.body if type(request.body) != bytes else request.body.decode('utf-8')
-    if body and request.content_type == 'application/json':
-        body = json.loads(body)
-    request_data['body'] = str(body)
+    try:
+        if type(request.body) != bytes:
+            body = request.body
+        else:
+            body = request.body.decode('utf-8')
+
+        if body and request.content_type == 'application/json':
+            body = json.loads(body)
+
+    except Exception:
+        request_data['body'] = ''
+
+    else:
+        request_data['body'] = str(body)
 
     if request.method != 'GET':
         request_data['get_params'] = dict(request.GET)
