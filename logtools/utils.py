@@ -67,6 +67,12 @@ def get_response_log_data(response):
         'context_data': str(getattr(response, 'context_data', {})),
         'headers': str(response._headers),
     }
+
     if 'text/html' not in response['Content-Type']:
-        log_data['content'] = response.content
+        try:
+            log_data['content'] = response.content
+
+        except AttributeError:
+            pass
+
     return log_data
